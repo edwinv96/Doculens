@@ -1,139 +1,143 @@
+from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import logging
+from collections.abc import AsyncIterator, Callable
+from typing import Any
+
+from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
-import os
-import shutil
-import json
 
-# Import new agent service
-from agent_service import chat_with_agent, chat_with_agent_stream
-# Import RAG backend functions
-from langchain_qa_backend import ingest_file
+try:
+    from .runtime_config import RuntimeSettings
+except ImportError:  # Supports `uvicorn main:app` from the backend directory.
+    from runtime_config import RuntimeSettings
 
 
-import logging
-logging.getLogger("mcp").setLevel(logging.ERROR)
-logging.getLogger("root").setLevel(logging.ERROR)
-# 细微优化
-# 之前日志中有个小 Warning：
-# WARNING:root:Failed to validate notification: 11 validation errors...
-# 这是 MCP 协议的底层日志，不影响业务，但看着心烦。可以通过调整 logging 级别来屏蔽：
-
-
-
+logger = logging.getLogger(__name__)
+settings = RuntimeSettings.from_env()
+settings.ensure_directories()
 
 app = FastAPI(
     title="Stream-Agent Backend API",
-    description="An API for the Unified Agent application powered by LangChain and Google Gemini.",
-    version="6.0.0",
+    description="A LangChain and LangGraph demo with RAG and tool calling.",
+    version="7.0.0",
 )
 
-# --- CORS Configuration ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=list(settings.allowed_origins),
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
-# --- Configuration ---
-# Use relative path for Windows compatibility, absolute for Linux/deployment
-import platform
-if platform.system() == "Windows":
-    TEMP_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "temp_uploads")
-else:
-    TEMP_UPLOAD_DIR = "/tmp/temp_uploads"
-os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
-
-# --- Data Models ---
 
 class AgentChatRequest(BaseModel):
-    message: str
-    thread_id: str = "default_thread"
-    api_keys: Optional[Dict[str, str]] = None
+    message: str = Field(min_length=1, max_length=20_000)
+    thread_id: str = Field(default="default_thread", min_length=1, max_length=128)
+    api_keys: dict[str, str] | None = None
+
 
 class AgentChatResponse(BaseModel):
     response: str
+
 
 class FileUploadResponse(BaseModel):
     filename: str
     message: str
 
-# --- API Endpoints ---
+
+def _load_agent_functions() -> tuple[Callable[..., Any], Callable[..., AsyncIterator[str]]]:
+    try:
+        from .agent_service import chat_with_agent, chat_with_agent_stream
+    except ImportError:
+        from agent_service import chat_with_agent, chat_with_agent_stream
+    return chat_with_agent, chat_with_agent_stream
+
+
+def _load_ingest_file() -> Callable[..., Any]:
+    try:
+        from .langchain_qa_backend import ingest_file
+    except ImportError:
+        from langchain_qa_backend import ingest_file
+    return ingest_file
+
+
+async def _save_upload(file: UploadFile) -> tuple[str, str]:
+    try:
+        destination = settings.upload_path(file.filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    total_bytes = 0
+    try:
+        with destination.open("wb") as output:
+            while chunk := await file.read(1024 * 1024):
+                total_bytes += len(chunk)
+                if total_bytes > settings.max_upload_bytes:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"Upload exceeds the {settings.max_upload_bytes}-byte limit.",
+                    )
+                output.write(chunk)
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
+
+    return str(destination), destination.name
+
 
 @app.get("/", tags=["Health Check"])
-def read_root():
-    return {"status": "ok", "message": "Welcome to the Stream-Agent Backend API v6.0!"}
+def read_root() -> dict[str, str]:
+    return {"status": "ok", "message": "Stream-Agent backend is ready."}
 
-# --- Agent Chat Endpoint (Streaming) ---
+
 @app.post("/chat/stream", tags=["Agent Chat"])
-async def chat_stream_endpoint(request: AgentChatRequest):
-    """
-    Stream endpoint for chatting with the autonomous agent.
-    Returns SSE (Server-Sent Events) with tokens and tool events.
-    """
+async def chat_stream_endpoint(request: AgentChatRequest) -> StreamingResponse:
+    _, chat_with_agent_stream = _load_agent_functions()
     return StreamingResponse(
         chat_with_agent_stream(
-            message=request.message, 
-            thread_id=request.thread_id, 
-            api_keys=request.api_keys
+            message=request.message,
+            thread_id=request.thread_id,
+            api_keys=request.api_keys,
         ),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
-# --- Agent Chat Endpoint (Sync - Legacy/Backup) ---
+
 @app.post("/chat_agent", response_model=AgentChatResponse, tags=["Agent Chat"])
-async def chat_agent_endpoint(request: AgentChatRequest):
-    """
-    Endpoint for chatting with the autonomous agent (Synchronous).
-    Now supports unified RAG through tools.
-    """
+async def chat_agent_endpoint(request: AgentChatRequest) -> AgentChatResponse:
+    chat_with_agent, _ = _load_agent_functions()
     try:
         response_content = await chat_with_agent(
-            message=request.message, 
+            message=request.message,
             thread_id=request.thread_id,
-            api_keys=request.api_keys
+            api_keys=request.api_keys,
         )
-        return AgentChatResponse(response=response_content)
-    except Exception as e:
-        print(f"Error in Agent Chat: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as exc:
+        logger.exception("Agent request failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The model provider could not complete the request.",
+        ) from exc
+    return AgentChatResponse(response=response_content)
 
-# --- File Upload Endpoint ---
+
 @app.post("/upload_file", response_model=FileUploadResponse, tags=["File Management"])
-async def upload_file_endpoint(file: UploadFile = File(...)):
-    """
-    Upload a file to the backend temporary storage and automatically ingest it into the knowledge base.
-    The Agent can then query this knowledge.
-    """
-    try:
-        file_path = os.path.join(TEMP_UPLOAD_DIR, file.filename)
-        
-        # Save file to disk
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        print(f"✅ File uploaded: {file.filename}")
-        
-        # Automatically ingest the file
-        print(f"📚 Auto-ingesting file: {file.filename} ...")
-        success = await ingest_file(file_path, file.filename)
-        
-        if success:
-            return FileUploadResponse(
-                filename=file.filename,
-                message=f"File {file.filename} uploaded and learned successfully! You can now ask questions about it."
-            )
-        else:
-             return FileUploadResponse(
-                filename=file.filename,
-                message=f"File {file.filename} uploaded, but ingestion failed. Agent might not know about it."
-            )
-            
-    except Exception as e:
-        print(f"❌ File upload error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
+async def upload_file_endpoint(file: UploadFile = File(...)) -> FileUploadResponse:
+    file_path, safe_name = await _save_upload(file)
+    ingest_file = _load_ingest_file()
+    if not await ingest_file(file_path, safe_name):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The PDF was uploaded but could not be indexed.",
+        )
+    return FileUploadResponse(
+        filename=safe_name,
+        message="The PDF was indexed and is ready for retrieval.",
+    )
