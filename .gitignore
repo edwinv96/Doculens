@@ -1,63 +1,51 @@
-# Python
+# Python bytecode and build outputs
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyd
-*.pyo
-.Python/
-build/
-develop-eggs/
-dist/
-eggs/
 *.egg-info/
-.installed.cfg
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+build/
+dist/
 
-# Streamlit
+# Local environments and secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test and tooling caches
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.scannerwork/
+
+# Streamlit local state
 .streamlit/cache/
 .streamlit/server_state.json
-.streamlit/secrets.toml # ⚠️ IMPORTANT: Keep your API keys out of version control!
+.streamlit/secrets.toml
 secrets.toml
 
-
-# IDE and Editor files
-.idea/                  # PyCharm
-.vscode/                # VS Code
-*.iml                   # IntelliJ IDEA (general)
-.project
-.settings
-.classpath
-
-# Operating System Files
-.DS_Store               # macOS
-Thumbs.db               # Windows
-Desktop.ini             # Windows
-
-# Jupyter Notebook files
-.ipynb_checkpoints/
-
-
-# Vector Store Data
-# 忽略所有以 chroma_db_ 或 data/ 开头的文件夹
-backend/chroma_db_*/
+# Runtime data, vector stores, databases, uploads, and logs
 backend/data/
+backend/temp_uploads/
+backend/chroma_db_*/
 chroma_langchain_db/
+data/
 *.db
 *.sqlite3
+*.log
 
-# Uploads
-# 忽略用户上传的临时文件
-backend/temp_uploads/
+# Local evaluation output
+evaluation/results/
+
