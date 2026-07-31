@@ -1,0 +1,44 @@
+name: Offline tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check Python syntax
+        run: python -m compileall -q backend tests tools
+
+      - name: Run dependency-light unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check repository hygiene
+        run: |
+          python - <<'PY'
+          import subprocess
+
+          tracked = subprocess.check_output(
+              ["git", "ls-files"], text=True
+          ).splitlines()
+          forbidden = [
+              path for path in tracked
+              if path.endswith("/.env")
+              or path == ".env"
+              or "/__pycache__/" in f"/{path}"
+              or path.endswith((".pyc", ".db", ".sqlite3"))
+          ]
+          if forbidden:
+              raise SystemExit("Forbidden runtime files are tracked: " + ", ".join(forbidden))
+          PY
