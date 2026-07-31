@@ -1,0 +1,3 @@
+{"id":"architecture","query":"What are the main components of the system?","expected_sources":["project-overview.pdf"]}
+{"id":"deployment","query":"How is the service deployed?","expected_sources":["deployment-guide.pdf"]}
+
