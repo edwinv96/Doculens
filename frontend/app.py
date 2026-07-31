@@ -6,11 +6,13 @@ import time
 import uuid
 import base64
 import re
+from pathlib import Path
 from dotenv import load_dotenv
 
 # --- 0. Load Environment Variables ---
 # 尝试加载 backend/.env 文件（本地开发时）
-env_path = os.path.join(os.path.dirname(__file__), "..", "backend", ".env")
+FRONTEND_DIR = Path(__file__).resolve().parent
+env_path = FRONTEND_DIR.parent / "backend" / ".env"
 if os.path.exists(env_path):
     load_dotenv(env_path)
 
@@ -36,7 +38,7 @@ def load_css(file_path):
     except FileNotFoundError:
         pass
 
-load_css("style.css")
+load_css(FRONTEND_DIR / "style.css")
 
 # --- 3. Session State Management ---
 if "thread_id" not in st.session_state:

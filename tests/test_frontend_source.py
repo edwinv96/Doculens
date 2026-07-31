@@ -39,6 +39,9 @@ class FrontendSourceTest(unittest.TestCase):
         self.assertIn('type=["pdf"]', self.source)
         self.assertIn("timeout=120", self.source)
 
+    def test_css_path_is_resolved_from_the_frontend_module(self) -> None:
+        self.assertIn('load_css(FRONTEND_DIR / "style.css")', self.source)
+
 
 if __name__ == "__main__":
     unittest.main()
