@@ -1,6 +1,7 @@
 import os
 import asyncio
 import aiosqlite
+from pathlib import Path
 from typing import Dict, Any, List
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -21,23 +22,36 @@ logging.getLogger("root").setLevel(logging.ERROR)
 
 
 
-# Import custom tools
-from tools.search_tools import generate_search_queries, execute_searches_and_get_urls
-from tools.rag_tools import ingest_knowledge, query_knowledge_base
-from tools.structure_tools import format_paper_analysis, format_linkedin_profile
+try:
+    from .runtime_config import RuntimeSettings
+    from .tools.e2b_tools import (
+        analyze_csv_data,
+        close_sandbox,
+        download_file_from_sandbox,
+        execute_python_code,
+        execute_shell_command,
+        install_python_package,
+        upload_data_to_sandbox,
+    )
+    from .tools.rag_tools import ingest_knowledge, query_knowledge_base
+    from .tools.search_tools import generate_search_queries, execute_searches_and_get_urls
+    from .tools.structure_tools import format_paper_analysis, format_linkedin_profile
+except ImportError:  # Supports imports from the backend working directory.
+    from runtime_config import RuntimeSettings
+    from tools.e2b_tools import (
+        analyze_csv_data,
+        close_sandbox,
+        download_file_from_sandbox,
+        execute_python_code,
+        execute_shell_command,
+        install_python_package,
+        upload_data_to_sandbox,
+    )
+    from tools.rag_tools import ingest_knowledge, query_knowledge_base
+    from tools.search_tools import generate_search_queries, execute_searches_and_get_urls
+    from tools.structure_tools import format_paper_analysis, format_linkedin_profile
 
-# Import E2B Code Interpreter tools
-from tools.e2b_tools import (
-    execute_python_code,
-    execute_shell_command,
-    install_python_package,
-    upload_data_to_sandbox,
-    download_file_from_sandbox,
-    analyze_csv_data,
-    close_sandbox
-)
-
-load_dotenv()
+load_dotenv(Path(__file__).with_name(".env"))
 
 # Global variables
 _agent_executor = None
@@ -48,7 +62,7 @@ _sqlite_conn = None
 # --- Persistence Config ---
 # On Vercel, only /tmp is writable
 # On Render (with Persistent Disk), we should use the mount path (e.g., /data)
-DATA_DIR = os.environ.get("DATA_DIR", "/tmp/data")
+DATA_DIR = str(RuntimeSettings.from_env().data_dir)
 DB_PATH = os.path.join(DATA_DIR, "state.db")
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
