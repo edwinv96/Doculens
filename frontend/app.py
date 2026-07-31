@@ -150,10 +150,10 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 📂 File Upload")
-    st.caption("Supports: PDF, CSV, Excel, JSON, TXT, Python")
+    st.caption("Supports PDF documents up to the backend upload limit")
     uploaded_file = st.file_uploader(
         "Upload file for analysis",
-        type=['pdf', 'csv', 'xlsx', 'xls', 'json', 'txt', 'py'],
+        type=["pdf"],
         key="file_uploader"
     )
     
@@ -167,7 +167,12 @@ with st.sidebar:
                     # Only bypass proxies if running locally (localhost/127.0.0.1)
                     proxies = {"http": None, "https": None} if "127.0.0.1" in BACKEND_URL or "localhost" in BACKEND_URL else None
                     
-                    response = requests.post(UPLOAD_ENDPOINT, files=files, proxies=proxies)
+                    response = requests.post(
+                        UPLOAD_ENDPOINT,
+                        files=files,
+                        proxies=proxies,
+                        timeout=120,
+                    )
                     
                     if response.status_code == 200:
                         result = response.json()
@@ -175,7 +180,11 @@ with st.sidebar:
                         st.success(msg)
                         st.session_state.last_uploaded_file = uploaded_file.name
                     else:
-                        st.error("Upload failed.")
+                        try:
+                            detail = response.json().get("detail", "Upload failed.")
+                        except ValueError:
+                            detail = "Upload failed."
+                        st.error(detail)
                 except Exception as e:
                     st.error(f"Error: {e}")
 
