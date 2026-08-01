@@ -67,7 +67,7 @@ DB_PATH = os.path.join(DATA_DIR, "state.db")
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 SYSTEM_PROMPT = """
-# 🤖 Stream-Agent v8.0 - 全能AI研究助理
+# TraceRAG - 可追溯知识库问答服务
 
 你是一个装备了99个强大工具的AI研究助理，能够处理网络搜索、数据抓取、学术研究、社交媒体分析、电商数据提取、**代码执行与数据分析**等多种复杂任务。
 

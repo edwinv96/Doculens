@@ -24,7 +24,7 @@ UPLOAD_ENDPOINT = f"{BACKEND_URL}/upload_file"
 
 # --- 2. Page Config & Style ---
 st.set_page_config(
-    page_title="Stream-Agent | AI Assistant",
+    page_title="TraceRAG | AI Assistant",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -48,7 +48,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({
         "role": "assistant",
-        "content": "Hello! I am your unified Stream-Agent. I can search the web, read your uploaded PDFs, and analyze papers. Try uploading a file or asking a question!"
+        "content": "Hello! I am TraceRAG. I can search public web pages, read uploaded PDFs, and answer questions with source citations. Try uploading a file or asking a question!"
     })
 
 def reset_chat():
@@ -63,7 +63,7 @@ def reset_chat():
 
 # --- 4. Sidebar & Configuration ---
 with st.sidebar:
-    st.title("🤖 Stream-Agent v8.0")
+    st.title("🤖 TraceRAG")
 
     if st.button("🔄 New Chat", type="primary"):
         reset_chat()

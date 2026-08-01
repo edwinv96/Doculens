@@ -20,8 +20,8 @@ settings = RuntimeSettings.from_env()
 settings.ensure_directories()
 
 app = FastAPI(
-    title="Stream-Agent Backend API",
-    description="A LangChain and LangGraph demo with RAG and tool calling.",
+    title="TraceRAG Backend API",
+    description="A traceable RAG agent with document ingestion, source citations, and tool calling.",
     version="7.0.0",
 )
 
@@ -93,7 +93,7 @@ async def _save_upload(file: UploadFile) -> tuple[str, str]:
 
 @app.get("/", tags=["Health Check"])
 def read_root() -> dict[str, str]:
-    return {"status": "ok", "message": "Stream-Agent backend is ready."}
+    return {"status": "ok", "message": "TraceRAG backend is ready."}
 
 
 @app.post("/chat/stream", tags=["Agent Chat"])
