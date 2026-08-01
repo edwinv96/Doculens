@@ -1,10 +1,10 @@
-# Stream-Agent RAG Demo
+# TraceRAG - 可追溯知识库问答服务
 
 [![Offline tests](https://github.com/Mootra/langchain-chat-app/actions/workflows/offline-tests.yml/badge.svg)](https://github.com/Mootra/langchain-chat-app/actions/workflows/offline-tests.yml)
 
-A focused Python demo for building a stateful LLM assistant with FastAPI, Streamlit, LangGraph, tool calling, PDF/web ingestion, cited RAG responses, and offline retrieval evaluation.
+TraceRAG is a Python knowledge-base question-answering service built with FastAPI, Streamlit, and LangGraph. It ingests PDFs and public web pages, streams agent and tool events through SSE, returns answers with stable source citations, and provides an offline retrieval-evaluation CLI for measuring search quality.
 
-This repository demonstrates application engineering around existing model and retrieval libraries. It does not claim to implement a foundation model, embedding model, or vector database from scratch.
+The project focuses on traceable RAG application engineering: separating ingestion, retrieval, reranking, agent execution, conversation state, and evaluation so each part can be tested independently. It builds on existing model and retrieval libraries rather than claiming to implement a foundation model, embedding model, or vector database from scratch.
 
 ## What the project demonstrates
 
