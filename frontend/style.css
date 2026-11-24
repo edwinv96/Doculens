@@ -34,6 +34,14 @@ main .block-container {
     padding: 1.6rem 1.8rem 5.5rem;
 }
 
+main [data-testid="stHorizontalBlock"] {
+    align-items: flex-start;
+}
+
+main [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: 0;
+}
+
 main h1 {
     color: #f5f7fb !important;
     font-size: clamp(1.9rem, 2.6vw, 2.45rem) !important;
@@ -70,6 +78,27 @@ main [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) > [da
 [data-testid="stChatMessage"] {
     padding: 0.95rem 1.05rem;
     margin-bottom: 0.7rem;
+}
+
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+    line-height: 1.7;
+}
+
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p:last-child {
+    margin-bottom: 0.15rem;
+}
+
+[data-testid="stChatMessage"] [data-testid="stExpander"] {
+    margin-top: 0.85rem;
+    border: 1px solid #28364b;
+    border-radius: 10px;
+    background: #0e141e;
+}
+
+/* The assistant history scrolls independently from the document list. */
+[data-testid="stVerticalBlock"]:has(> [data-testid="stChatMessage"]) {
+    scrollbar-color: #34445c #101722;
+    scrollbar-width: thin;
 }
 
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
@@ -152,6 +181,11 @@ main [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) > [da
     padding: 0.1rem 0.35rem;
 }
 
+.stApp [data-testid="stChatInput"]:focus-within {
+    border-color: #4b82ef !important;
+    box-shadow: 0 0 0 3px rgba(40, 105, 235, 0.16), 0 10px 32px rgba(0, 0, 0, 0.32);
+}
+
 .stApp [data-testid="stChatInput"] textarea {
     color: #f1f5fb !important;
     background: transparent !important;
@@ -196,5 +230,9 @@ main [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) > [da
 @media (max-width: 900px) {
     main .block-container {
         padding: 1.2rem 1rem 5rem;
+    }
+
+    [data-testid="stChatMessage"] {
+        padding: 0.8rem;
     }
 }

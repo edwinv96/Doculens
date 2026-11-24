@@ -289,41 +289,42 @@ with assistant_col:
 
 
     def render_answer_with_evidence(content):
-        marker = "\n\nSources:\n"
-        if marker not in content:
+        marker = re.search(r"\n\s*Sources:\s*\n?", content, flags=re.IGNORECASE)
+        if marker is None:
             render_content_with_images(content)
             return
-        answer, evidence = content.split(marker, 1)
+        answer = content[:marker.start()]
+        evidence = content[marker.end():]
         render_content_with_images(answer.strip())
-        with st.expander("Sources and retrieved evidence"):
+        with st.expander("Sources · retrieved passages", expanded=False):
             st.markdown(evidence.strip())
 
     # Display Message History
-    for msg in st.session_state.messages:
-        avatar = "🧑‍💻" if msg["role"] == "user" else "🤖"
-        with st.chat_message(msg["role"], avatar=avatar):
-            # Try to render JSON content (Paper Analysis / Profile)
-            content = msg["content"]
-            try:
-                # Heuristic check if it looks like JSON
-                if content.strip().startswith("{") and "type" in content:
-                    data_obj = json.loads(content)
-                    if data_obj.get("type") == "paper_analysis":
-                        d = data_obj.get("data", {})
-                        st.markdown(f"### 📄 {d.get('title')}")
-                        st.caption(f"**Authors:** {', '.join(d.get('authors', []))}")
-                        st.info(d.get('summary'))
-                    elif data_obj.get("type") == "linkedin_profile":
-                        d = data_obj.get("data", {})
-                        st.markdown(f"### 👔 {d.get('full_name')}")
-                        st.caption(f"{d.get('headline')} | {d.get('location')}")
-                        st.info(d.get('summary'))
+    with st.container(height=620, border=False):
+        for msg in st.session_state.messages:
+            avatar = "🧑‍💻" if msg["role"] == "user" else "🤖"
+            with st.chat_message(msg["role"], avatar=avatar):
+                # Try to render JSON content (Paper Analysis / Profile)
+                content = msg["content"]
+                try:
+                    if content.strip().startswith("{") and "type" in content:
+                        data_obj = json.loads(content)
+                        if data_obj.get("type") == "paper_analysis":
+                            d = data_obj.get("data", {})
+                            st.markdown(f"### 📄 {d.get('title')}")
+                            st.caption(f"**Authors:** {', '.join(d.get('authors', []))}")
+                            st.info(d.get("summary"))
+                        elif data_obj.get("type") == "linkedin_profile":
+                            d = data_obj.get("data", {})
+                            st.markdown(f"### 👔 {d.get('full_name')}")
+                            st.caption(f"{d.get('headline')} | {d.get('location')}")
+                            st.info(d.get("summary"))
+                        else:
+                            render_content_with_images(content)
                     else:
-                        render_content_with_images(content)
-                else:
+                        render_answer_with_evidence(content)
+                except (ValueError, TypeError, KeyError):
                     render_answer_with_evidence(content)
-            except:
-                render_answer_with_evidence(content)
 
     # --- 6. Streaming Logic ---
     def stream_generator(prompt):
