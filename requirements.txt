@@ -44,4 +44,4 @@ e2b>=1.0.0
 e2b-code-interpreter>=1.0.0
 
 # Frontend (for Streamlit Cloud / Render)
-streamlit==1.46.1
+streamlit==1.60.0

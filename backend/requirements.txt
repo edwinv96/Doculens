@@ -35,7 +35,7 @@ mcp==1.13.1
 fastapi-mcp==0.4.0
 
 # Frontend (for Streamlit Cloud)
-streamlit==1.46.1
+streamlit==1.60.0
 
 # E2B Code Interpreter (Cloud Sandbox)
 e2b>=1.0.0

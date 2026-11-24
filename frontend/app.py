@@ -300,7 +300,12 @@ with assistant_col:
             st.markdown(evidence.strip())
 
     # Display Message History
-    with st.container(height=620, border=False):
+    history_container = (
+        st.container(height=620, border=False)
+        if len(st.session_state.messages) > 4
+        else st.container(border=False)
+    )
+    with history_container:
         for msg in st.session_state.messages:
             avatar = "🧑‍💻" if msg["role"] == "user" else "🤖"
             with st.chat_message(msg["role"], avatar=avatar):
@@ -498,21 +503,28 @@ with assistant_col:
                 st.rerun()
 
     # Chat Input
-    prompt = st.chat_input("Ask about your indexed documents…")
+    prompt = st.chat_input(
+        "Ask about your indexed documents…",
+        key="doculens_chat_input",
+        submit_mode="stop",
+    )
     if not prompt:
         prompt = st.session_state.pop("suggested_prompt", None)
     if prompt:
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="🧑‍💻"):
-            st.markdown(prompt)
-    
-        # Display Assistant Response
-        with st.chat_message("assistant", avatar="🤖"):
-            response_placeholder = st.empty()
-            full_response = ""
-        
-            # Use st.write_stream to consume our generator
-            full_response = st.write_stream(stream_generator(prompt))
-        
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        # Keep a useful transcript if the user stops the running response.
+        st.session_state.messages.append(
+            {"role": "assistant", "content": "Generation stopped before the answer finished."}
+        )
+        # Render the active turn inside the same history area, above the composer.
+        with history_container:
+            with st.chat_message("user", avatar="🧑‍💻"):
+                st.markdown(prompt)
+            with st.chat_message("assistant", avatar="🤖"):
+                full_response = st.write_stream(stream_generator(prompt))
+        st.session_state.messages[-1]["content"] = (
+            full_response.strip()
+            if isinstance(full_response, str) and full_response.strip()
+            else "Generation stopped before the answer finished."
+        )
+        st.rerun()
