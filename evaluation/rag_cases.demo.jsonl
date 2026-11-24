@@ -1,0 +1,4 @@
+{"id":"rag-definition","query":"What does Retrieval-Augmented Generation combine, and why retrieve passages before answering?","expected_sources":["DocuLens_Demo.pdf"]}
+{"id":"embeddings","query":"What are embeddings, and how are they used to find related passages?","expected_sources":["DocuLens_Demo.pdf"]}
+{"id":"vector-search-reranking","query":"What does the vector database do, and what can a reranker improve?","expected_sources":["DocuLens_Demo.pdf"]}
+{"id":"agent-observability","query":"Which agent events should the interface show, and what should remain hidden?","expected_sources":["DocuLens_Demo.pdf"]}

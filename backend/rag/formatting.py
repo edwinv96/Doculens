@@ -23,6 +23,23 @@ class SourceCitation:
         return f"{self.source} (p.{self.page + 1})"
 
 
+def select_evidence(
+    scored_documents: Sequence[tuple[DocumentLike, float]],
+    minimum_score: float,
+    max_documents: int,
+) -> list[DocumentLike]:
+    """Keep the best retrieved passages that meet the configured relevance floor."""
+    if not 0.0 <= minimum_score <= 1.0:
+        raise ValueError("minimum_score must be between 0 and 1.")
+    if max_documents <= 0:
+        raise ValueError("max_documents must be positive.")
+    return [
+        document
+        for document, score in scored_documents
+        if score >= minimum_score
+    ][:max_documents]
+
+
 def _preview(text: str, limit: int = 160) -> str:
     normalized = re.sub(r"\s+", " ", text).strip()
     if len(normalized) <= limit:

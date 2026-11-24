@@ -1,13 +1,16 @@
 services:
-  chat-langchain:
+  doculens:
     build: .
-    container_name: chat-langchain
+    container_name: doculens
 
     ports:
       - "8501:8501"
 
     env_file:
       - backend/.env
+
+    environment:
+      DATA_DIR: /var/lib/data
 
     volumes:
       - ./backend:/app/backend

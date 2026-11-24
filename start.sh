@@ -24,6 +24,4 @@ echo "Streamlit will listen on port $PORT"
 
 streamlit run frontend/app.py \
     --server.port=$PORT \
-    --server.address=0.0.0.0 \
-    --server.enableCORS=false \
-    --server.enableXsrfProtection=false
+    --server.address=0.0.0.0

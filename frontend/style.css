@@ -1,105 +1,200 @@
-/* frontend/style.css */
+:root {
+    color-scheme: dark;
+}
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
-/* --- Global Styles --- */
 .stApp {
-    background-color: #f8f9fa; /* Light gray background */
-    font-family: 'Inter', sans-serif;
+    color: #e8edf7;
+    background:
+        radial-gradient(ellipse at 70% 0%, rgba(37, 76, 143, 0.18), transparent 38%),
+        #0a0d13;
 }
 
-/* --- Sidebar --- */
 [data-testid="stSidebar"] {
-    background-color: #ffffff;
-    border-right: 1px solid #e0e0e0;
+    background: #0d1119;
+    border-right: 1px solid #1c2533;
 }
 
-/* --- Chat Messages --- */
+[data-testid="stSidebar"] h1 {
+    color: #f3f6fc !important;
+    font-size: 1.35rem;
+    letter-spacing: -0.035em;
+}
+
+[data-testid="stSidebar"] :is(p, span, label, small),
+.stApp [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stMarkdownContainer"] :is(p, li, strong, em, h1, h2, h3, h4, h5, h6),
+.stApp [data-testid="stCaptionContainer"],
+.stApp [data-testid="stMetricLabel"],
+.stApp [data-testid="stMetricValue"] {
+    color: #dbe3ef !important;
+}
+
+main .block-container {
+    max-width: 1600px;
+    padding: 1.6rem 1.8rem 5.5rem;
+}
+
+main h1 {
+    color: #f5f7fb !important;
+    font-size: clamp(1.9rem, 2.6vw, 2.45rem) !important;
+    letter-spacing: -0.045em;
+    margin-bottom: 0.25rem !important;
+}
+
+main h2, main h3 {
+    color: #f1f5fb !important;
+    letter-spacing: -0.025em;
+}
+
+main [data-testid="stCaptionContainer"] {
+    color: #8e9bb0 !important;
+    line-height: 1.55;
+}
+
+main [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) > [data-testid="column"] {
+    background: #0d121a;
+    border: 1px solid #202a39;
+    border-radius: 16px;
+    padding: 1.1rem 1rem;
+}
+
+[data-testid="stChatMessage"],
+[data-testid="stVerticalBlockBorderWrapper"] {
+    color: #e8edf7 !important;
+    background: #111722 !important;
+    border: 1px solid #202b3b !important;
+    border-radius: 14px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
 [data-testid="stChatMessage"] {
-    background-color: transparent;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
+    padding: 0.95rem 1.05rem;
+    margin-bottom: 0.7rem;
 }
 
-/* User Message Bubble */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageContent"] > div:first-child:contains("🧑‍💻")) {
-    flex-direction: row-reverse;
-    text-align: right;
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background: #14243b !important;
+    border-color: #233c60 !important;
 }
 
-/* Style the content container for messages */
-[data-testid="stChatMessageContent"] {
-    background-color: white;
-    padding: 15px;
-    border-radius: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    width: fit-content;
-    max-width: 80%;
-}
-
-/* Specific styling for User vs Assistant bubbles based on avatar/role is tricky with pure CSS selectors in Streamlit's dynamic DOM.
-   Instead, we rely on the layout structure provided by st.chat_message() and add general enhancements. 
-*/
-
-/* Assistant Message Enhancements */
-/* Giving assistant messages a slightly different look */
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatar"] {
-    background-color: #f0f2f6;
-    border-radius: 50%;
-    padding: 5px;
-}
-
-
-/* --- Structured Output Cards (Paper Analysis, Profile) --- */
-/* Note: These classes need to be injected or used within st.markdown(..., unsafe_allow_html=True) if we were writing raw HTML. 
-   Since we are using st.markdown/st.info, we style the standard Streamlit elements they map to. 
-*/
-
-/* Improve the look of st.info / st.success boxes used in structured output */
-.stAlert {
+[data-testid="stChatMessageAvatar"] {
+    background: #1b2b43;
     border-radius: 10px;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* --- Input Area --- */
-/* Make the chat input stick to the bottom with a nice shadow */
-[data-testid="stChatInput"] {
-    position: fixed;
-    bottom: 20px;
-    left: 50%; 
-    transform: translateX(-50%);
-    max-width: 700px;
-    width: 100%;
-    z-index: 100;
-    background: transparent;
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] button[kind="primary"],
+.stApp button[kind="primary"],
+.stApp [data-testid="stBaseButton-primary"] {
+    color: #fff !important;
+    background: linear-gradient(135deg, #2463eb, #3479f6) !important;
+    border: 1px solid #397cf2 !important;
+    border-radius: 9px !important;
+    box-shadow: 0 5px 18px rgba(37, 99, 235, 0.2);
 }
 
-/* --- Tabs --- */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 20px;
+[data-testid="stBaseButton-primary"] * {
+    color: #fff !important;
 }
 
-.stTabs [data-baseweb="tab"] {
-    height: 50px;
-    white-space: pre-wrap;
-    background-color: white;
-    border-radius: 8px;
-    padding: 10px 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    border: 1px solid #eee;
+.stApp button:not([kind="primary"]),
+.stApp button[kind="secondary"] {
+    color: #dce6f5 !important;
+    background: #151c27 !important;
+    border: 1px solid #293548 !important;
+    border-radius: 9px !important;
 }
 
-.stTabs [aria-selected="true"] {
-    background-color: #e3f2fd;
-    border-color: #2196f3;
-    color: #1565c0;
+.stApp button:hover {
+    border-color: #4b82ef !important;
+    color: #fff !important;
+    transition: border-color 140ms ease, background 140ms ease;
 }
 
-/* --- Expander for Sources --- */
-.streamlit-expanderHeader {
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    font-size: 0.9rem;
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    border-radius: 9px;
+    padding: 0.2rem 0.45rem;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: #151f2e;
+}
+
+.stApp [data-testid="stFileUploader"] section,
+.stApp [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] {
+    color: #dbe3ef !important;
+    background: #101723 !important;
+    border: 1px dashed #344760 !important;
+    border-radius: 12px !important;
+}
+
+.stApp [data-testid="stFileUploader"] :is(span, small, p, label) {
+    color: #c5d0e0 !important;
+}
+
+.stApp [data-testid="stSelectbox"] label,
+.stApp [data-testid="stTextInput"] label {
+    color: #aab6c8 !important;
+}
+
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    color: #e7edf7 !important;
+    background: #111722 !important;
+    border-color: #2b3749 !important;
+    border-radius: 9px;
+}
+
+.stApp [data-testid="stChatInput"] {
+    background: #111722 !important;
+    border: 1px solid #2a374b !important;
+    border-radius: 13px !important;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.32);
+    padding: 0.1rem 0.35rem;
+}
+
+.stApp [data-testid="stChatInput"] textarea {
+    color: #f1f5fb !important;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.stApp [data-testid="stChatInput"] textarea::placeholder {
+    color: #7f8ca1 !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stChatInput"] button {
+    color: #fff !important;
+    background: #2869eb !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+}
+
+.stApp [data-testid="stBottom"],
+.stApp [data-testid="stBottomBlockContainer"] {
+    background: rgba(10, 13, 19, 0.96) !important;
+}
+
+.stApp [data-testid="stStatusWidget"] {
+    color: #dce6f5;
+    background: #101722;
+    border: 1px solid #253247;
+    border-radius: 12px;
+}
+
+.stApp [data-testid="stAlert"] {
+    color: #e7edf7 !important;
+    background: #121c2a !important;
+    border: 1px solid #263b5b !important;
+    border-radius: 10px !important;
+}
+
+.stApp a {
+    color: #80aeff !important;
+}
+
+@media (max-width: 900px) {
+    main .block-container {
+        padding: 1.2rem 1rem 5rem;
+    }
 }

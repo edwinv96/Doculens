@@ -4,7 +4,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Any
 
-from backend.rag.formatting import collect_citations, format_answer_with_sources
+from backend.rag.formatting import collect_citations, format_answer_with_sources, select_evidence
 
 
 @dataclass
@@ -37,6 +37,27 @@ class RagFormattingTest(unittest.TestCase):
 
     def test_format_answer_without_documents_returns_plain_answer(self) -> None:
         self.assertEqual(format_answer_with_sources("  No context.  ", []), "No context.")
+
+    def test_select_evidence_filters_below_threshold_and_caps_count(self) -> None:
+        documents = [
+            FakeDocument("relevant", {"source": "a.pdf"}),
+            FakeDocument("weak", {"source": "b.pdf"}),
+            FakeDocument("also relevant", {"source": "c.pdf"}),
+        ]
+
+        selected = select_evidence(
+            [(documents[0], 0.8), (documents[1], 0.2), (documents[2], 0.7)],
+            minimum_score=0.5,
+            max_documents=1,
+        )
+
+        self.assertEqual(selected, [documents[0]])
+
+    def test_select_evidence_rejects_invalid_configuration(self) -> None:
+        with self.assertRaises(ValueError):
+            select_evidence([], minimum_score=1.1, max_documents=3)
+        with self.assertRaises(ValueError):
+            select_evidence([], minimum_score=0.5, max_documents=0)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-E2B Code Interpreter Tools for My-Chat-LangChain
+E2B Code Interpreter Tools for DocuLens
 
 This module provides secure code execution capabilities using E2B's cloud sandbox.
 All code runs in an isolated environment, ensuring safety and security.

@@ -9,6 +9,16 @@ from backend.rag.evaluation import RetrievalCase, evaluate_retrieval, load_cases
 
 
 class RetrievalEvaluationTest(unittest.TestCase):
+    def test_demo_dataset_uses_the_included_sample_document(self) -> None:
+        path = Path(__file__).resolve().parents[1] / "evaluation" / "rag_cases.demo.jsonl"
+        cases = load_cases(path)
+
+        self.assertGreaterEqual(len(cases), 3)
+        self.assertEqual(
+            {source for case in cases for source in case.expected_sources},
+            {"DocuLens_Demo.pdf"},
+        )
+
     def test_metrics_measure_hit_rank_and_source_recall(self) -> None:
         cases = [
             RetrievalCase("one", "first question", ("a.pdf",)),

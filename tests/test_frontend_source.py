@@ -15,25 +15,16 @@ class FrontendSourceTest(unittest.TestCase):
     def test_source_is_valid_python(self) -> None:
         self.assertIsInstance(self.tree, ast.Module)
 
-    def test_env_path_is_assigned_before_it_is_loaded(self) -> None:
-        assignment_lines = [
-            node.lineno
-            for node in ast.walk(self.tree)
-            if isinstance(node, ast.Name)
-            and node.id == "env_path"
-            and isinstance(node.ctx, ast.Store)
-        ]
-        load_lines = [
-            node.lineno
-            for node in ast.walk(self.tree)
-            if isinstance(node, ast.Name)
-            and node.id == "env_path"
-            and isinstance(node.ctx, ast.Load)
-        ]
+    def test_frontend_does_not_load_or_transmit_provider_credentials(self) -> None:
+        self.assertNotIn("load_dotenv", self.source)
+        self.assertNotIn("api_keys", self.source)
+        self.assertNotIn('text_input("API Key"', self.source)
+        self.assertIn('st.caption("Provider credentials stay in backend/.env', self.source)
 
-        self.assertTrue(assignment_lines)
-        self.assertTrue(load_lines)
-        self.assertLess(min(assignment_lines), min(load_lines))
+    def test_product_brand_and_demo_document_use_doculens(self) -> None:
+        self.assertIn('page_title="DocuLens"', self.source)
+        self.assertIn('st.title("DocuLens")', self.source)
+        self.assertIn('"DocuLens_Demo.pdf"', self.source)
 
     def test_frontend_only_advertises_supported_pdf_uploads(self) -> None:
         self.assertIn('type=["pdf"]', self.source)

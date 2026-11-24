@@ -48,4 +48,5 @@ data/
 
 # Local evaluation output
 evaluation/results/
+.runtime/
 

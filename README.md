@@ -1,146 +1,141 @@
-# TraceRAG - 可追溯知识库问答服务
+# DocuLens — Intelligent Knowledge & Research Assistant
 
-[![Offline tests](https://github.com/Mootra/langchain-chat-app/actions/workflows/offline-tests.yml/badge.svg)](https://github.com/Mootra/langchain-chat-app/actions/workflows/offline-tests.yml)
+[![Offline tests](https://github.com/Mootra/TraceRAG/actions/workflows/offline-tests.yml/badge.svg)](https://github.com/Mootra/TraceRAG/actions/workflows/offline-tests.yml)
 
-TraceRAG is a Python knowledge-base question-answering service built with FastAPI, Streamlit, and LangGraph. It ingests PDFs and public web pages, streams agent and tool events through SSE, returns answers with stable source citations, and provides an offline retrieval-evaluation CLI for measuring search quality.
+DocuLens is a local document-question-answering demonstration built on the existing [Mootra/TraceRAG](https://github.com/Mootra/TraceRAG) repository. It combines PDF ingestion, semantic retrieval, optional reranking, a LangGraph tool-using assistant, source citations, conversation persistence, and offline retrieval evaluation.
 
-The project focuses on traceable RAG application engineering: separating ingestion, retrieval, reranking, agent execution, conversation state, and evaluation so each part can be tested independently. It builds on existing model and retrieval libraries rather than claiming to implement a foundation model, embedding model, or vector database from scratch.
+## What it demonstrates
 
-## What the project demonstrates
+- FastAPI backend and Streamlit interface with server-sent chat events.
+- LangGraph ReAct agent with SQLite checkpointing by conversation ID.
+- PDF ingestion into Chroma using Hugging Face embeddings and page metadata.
+- Similarity search, configurable relevance floor, optional FlashRank reranking, and excerpt citations.
+- Public URL ingestion with URL validation in the existing ingestion tool.
+- Health and document inventory APIs, plus a retrieval evaluation page.
+- An original sample PDF and reproducible retrieval questions.
 
-- A FastAPI backend with synchronous and Server-Sent Events chat endpoints.
-- A Streamlit UI for model configuration, chat, tool events, and PDF upload.
-- A LangGraph ReAct agent with SQLite-backed conversation state.
-- PDF and public-web ingestion into a Chroma vector store.
-- Hugging Face embeddings, similarity retrieval, and optional FlashRank reranking.
-- Stable source citations and raw retrieved documents preserved as tool artifacts.
-- An offline evaluation harness for Hit Rate@K, mean reciprocal rank, and expected-source recall.
-- Upload path/size validation, public-URL validation, secret isolation, and dependency-light CI tests.
+The application composes existing AI and vector-store libraries; it does not implement a foundation model, embedding model, or vector database from scratch. It is a local technical demo, not a production multi-tenant service.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI["Streamlit UI"] -->|"HTTP / SSE"| API["FastAPI API"]
-    API --> AGENT["LangGraph agent"]
-    AGENT --> TOOLS["RAG and sandbox tools"]
-    TOOLS --> RETRIEVER["Chroma retriever"]
-    RETRIEVER --> RERANK["FlashRank reranker"]
-    RERANK --> MODEL["Gemini or OpenAI-compatible model"]
-    AGENT --> STATE["SQLite conversation state"]
-    UPLOAD["PDF or public URL"] --> INGEST["Load, split, embed"]
-    INGEST --> RETRIEVER
-    RETRIEVER --> EVAL["Offline retrieval evaluation"]
+    UI[Streamlit] -->|HTTP and SSE| API[FastAPI]
+    API --> AGENT[LangGraph agent]
+    AGENT --> TOOLS[RAG and optional sandbox tools]
+    TOOLS --> RETRIEVAL[Chroma similarity search]
+    RETRIEVAL --> RERANK[Optional FlashRank]
+    RERANK --> MODEL[Configured Gemini or OpenAI-compatible model]
+    AGENT --> DB[SQLite conversation checkpoints]
+    PDF[PDF upload] --> INGEST[Extract, chunk, embed]
+    INGEST --> RETRIEVAL
+    RETRIEVAL --> EVAL[Offline retrieval evaluator]
 ```
 
-Important code locations:
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for component details.
+
+## Repository map
 
 ```text
-backend/main.py                  FastAPI endpoints and upload boundary
-backend/agent_service.py         LangGraph agent, tools, and conversation state
-backend/langchain_qa_backend.py  ingestion, vector store, reranking, RAG chain
-backend/rag/formatting.py        cited answer formatting
-backend/rag/evaluation.py        dependency-light retrieval metrics
-backend/runtime_config.py        runtime paths, origins, and upload policy
-backend/url_policy.py            public HTTP/HTTPS URL validation
-frontend/app.py                  Streamlit interface
-tools/evaluate_retrieval.py      evaluation CLI using the current vector store
-tests/                            offline unit and source-contract tests
+backend/main.py                  FastAPI routes and upload boundary
+backend/agent_service.py         LangGraph agent, tools, and SQLite state
+backend/langchain_qa_backend.py  PDF/URL ingestion, Chroma, retrieval and RAG
+backend/rag/formatting.py        Evidence selection and citation formatting
+backend/rag/evaluation.py        Dependency-light retrieval metrics
+backend/runtime_config.py        Paths, upload policy, and CORS settings
+backend/url_policy.py            Public HTTP/HTTPS URL validation
+frontend/app.py                  Streamlit navigation, upload, chat, evaluation
+frontend/style.css               Application styling
+demo/                            Original sample source and PDF
+evaluation/                      Demonstration retrieval cases
+docs/                            Architecture, implementation, and demo guides
+scripts/                         Windows PowerShell startup helpers
+tests/                           Offline unit and source-contract tests
 ```
 
-## Local setup
+## Setup on Windows
 
-Python 3.11 or 3.12 is recommended. The embedding and reranking dependencies are sizeable, so the first installation and first embedding-model load can take several minutes.
-
-Windows PowerShell:
+Python 3.11 or 3.12 is recommended. Embedding and reranking packages may take time to install and download their first model.
 
 ```powershell
-python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-Copy-Item backend\.env.example backend\.env
+if (-not (Test-Path backend\.env)) { Copy-Item backend\.env.example backend\.env }
 notepad backend\.env
 ```
 
-At minimum, configure `GOOGLE_API_KEY` for the default Gemini provider. Alternatively, set `LLM_PROVIDER=openai_compatible` and configure the corresponding base URL, model, and API key.
+Set `GOOGLE_API_KEY` in `backend/.env` for Gemini. Alternatively, set `LLM_PROVIDER=openai_compatible`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, and `OPENAI_API_KEY`. Provider credentials are read by the backend; the frontend does not collect them or include them in chat requests. Never commit `backend/.env`.
 
-Never commit `backend/.env`. The repository tracks only `backend/.env.example`.
+Optional retrieval tuning is also available in `backend/.env`: `RAG_MIN_RELEVANCE_SCORE` (default `0.25`), `RAG_RETRIEVAL_K` (default `20`), `RAG_RERANK_TOP_N` (default `10`), `RAG_CHUNK_SIZE` (default `1000`), `RAG_CHUNK_OVERLAP` (default `200`), `RERANK_ENABLED` (default `true`), and `MAX_WEB_BYTES` (default 2 MiB).
 
-## Run the application
+### Start services
 
-Start the backend from the repository root:
+In separate PowerShell terminals at the repository root:
 
 ```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+.\scripts\start_backend.ps1
 ```
 
-Start the frontend in a second terminal:
-
 ```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
-$env:BACKEND_URL='http://127.0.0.1:8000'
-python -m streamlit run frontend/app.py
+.\scripts\start_frontend.ps1
 ```
 
-The backend health endpoint is available at `http://127.0.0.1:8000/` and the Streamlit UI defaults to `http://127.0.0.1:8501/`.
+Open <http://localhost:8501>. `scripts/start_demo.ps1` checks configuration and ports, then starts both services in the background. The root-level `docker compose up --build` workflow is also available.
 
-Docker Compose is also available:
+## Demo workflow
+
+1. Open **Knowledge Base** and download `DocuLens_Demo.pdf`, or locate it at `demo/DocuLens_Demo.pdf`.
+2. Upload the PDF from the sidebar and wait for the backend to confirm indexing.
+3. Ask: “Explain how RAG works and identify the role of embeddings, vector search and reranking.”
+4. Inspect the cited excerpts and expand the agent execution panel.
+5. In **Evaluation**, run the included cases against the indexed vector store.
+
+The sample note is original project writing. Metrics are displayed only after the evaluator actually runs; a four-question single-document dataset is illustrative and is not a broad benchmark. More detail and recovery steps are in [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md).
+
+## API routes
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/` | Backward-compatible basic health response |
+| GET | `/health` | Configuration state; provider reachability is not checked |
+| GET | `/documents` | Indexed source metadata and chunk counts |
+| POST | `/upload_file` | Validate and index a PDF |
+| POST | `/chat_agent` | Non-streaming agent response |
+| POST | `/chat/stream` | SSE text and actual tool events |
+| POST | `/evaluation/run` | Evaluate bundled cases against the local index |
+
+## Evaluation and tests
+
+Run the demo evaluation after indexing its PDF:
 
 ```powershell
-docker compose up --build
+python tools/evaluate_retrieval.py --cases evaluation/rag_cases.demo.jsonl --k 5
 ```
 
-## Offline tests
-
-The core security, formatting, evaluation, and frontend-contract tests do not call a model provider and do not download embedding models:
+Offline checks do not call a paid provider:
 
 ```powershell
 python -m unittest discover -s tests -v
 python -m compileall -q backend tests tools
 ```
 
-GitHub Actions runs the same checks and rejects tracked `.env`, bytecode, database, and cache files.
+## Security and limitations
 
-## Retrieval evaluation
+- PDF uploads are limited by `MAX_UPLOAD_BYTES`; filenames are validated before writing.
+- The URL policy rejects credentialed URLs and non-public IP destinations. Review redirect behavior before exposing URL ingestion to untrusted users.
+- Secrets stay in backend configuration and are not returned by `/health`.
+- `.dockerignore` excludes local `.env`, database, upload, and cache files from image builds.
+- `/health` reports configured state only. It does not probe provider reachability; vector-store state indicates whether local index files are present.
+- Authentication, per-user vector isolation, production rate limiting, and enterprise compliance are not implemented.
+- Live provider integration and model-backed ingestion require the corresponding installed dependencies, model downloads, and credentials.
 
-1. Index the documents that will form the evaluation corpus.
-2. Copy `evaluation/rag_cases.example.jsonl` and replace the sample entries with real questions and expected source names.
-3. Run the evaluator without calling the chat model:
+## Attribution
 
-```powershell
-python tools/evaluate_retrieval.py --cases evaluation/rag_cases.jsonl --k 5
-```
-
-Example output shape:
-
-```json
-{
-  "evaluated_cases": 20,
-  "hit_rate_at_k": 0.85,
-  "mean_reciprocal_rank": 0.71,
-  "expected_source_recall_at_k": 0.78
-}
-```
-
-These numbers are an output example, not a claimed benchmark. Only report metrics produced from a committed dataset and a reproducible vector-store snapshot.
-
-## Security boundaries
-
-- Only PDF uploads are accepted, with a configurable maximum byte size.
-- Upload filenames cannot contain directory components or unsupported characters.
-- URL ingestion permits only HTTP/HTTPS targets that resolve exclusively to public IP addresses.
-- Localhost, private, loopback, link-local, reserved, and credentialed URLs are rejected.
-- Provider keys belong in `backend/.env` or deployment secrets, never in Git.
-- The synchronous agent endpoint logs provider failures server-side and returns a generic client error.
-
-This remains a demo, not a production multi-tenant service. It does not yet provide authentication, per-user vector-store isolation, rate limiting, or a full end-to-end test against live providers.
-
-## Current limitations and next work
-
-- Add authenticated users and isolate chat/vector data per account.
-- Replace user-supplied API keys in request bodies with server-managed provider profiles.
-- Commit a real retrieval evaluation dataset and publish reproducible results.
-- Add integration tests with fake model and embedding implementations.
-- Record request latency, retrieval depth, tool failures, and provider error rates.
+This project is based on [Mootra/TraceRAG](https://github.com/Mootra/TraceRAG), licensed under MIT. Its `LICENSE` and Git history are retained. DocuLens changes are described in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md); the original project and contributors remain credited for the base application.
