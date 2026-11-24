@@ -11,7 +11,7 @@ class ApiContractTest(unittest.TestCase):
         cls.source = (Path(__file__).resolve().parents[1] / "backend" / "main.py").read_text(encoding="utf-8")
         cls.tree = ast.parse(cls.source)
 
-    def test_chat_request_does_not_accept_provider_credentials(self) -> None:
+    def test_chat_request_accepts_document_scope_without_provider_credentials(self) -> None:
         model = next(
             node for node in self.tree.body
             if isinstance(node, ast.ClassDef) and node.name == "AgentChatRequest"
@@ -23,7 +23,7 @@ class ApiContractTest(unittest.TestCase):
             for target in [node.target]
             if isinstance(target, ast.Name)
         }
-        self.assertEqual(fields, {"message", "thread_id"})
+        self.assertEqual(fields, {"message", "thread_id", "source_filter"})
 
     def test_health_document_and_evaluation_routes_are_declared(self) -> None:
         for path in ('"/health"', '"/documents"', '"/evaluation/run"'):
