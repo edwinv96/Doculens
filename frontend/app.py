@@ -73,6 +73,7 @@ with st.sidebar:
     page = st.radio(
         "Workspace",
         ["Research Assistant", "Knowledge Base", "Evaluation", "Settings"],
+        key="workspace_page",
         label_visibility="collapsed",
     )
 
