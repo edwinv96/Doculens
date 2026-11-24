@@ -7,6 +7,7 @@ import uuid
 import base64
 import re
 import hashlib
+import inspect
 from pathlib import Path
 
 FRONTEND_DIR = Path(__file__).resolve().parent
@@ -503,11 +504,12 @@ with assistant_col:
                 st.rerun()
 
     # Chat Input
-    prompt = st.chat_input(
-        "Ask about your indexed documents…",
-        key="doculens_chat_input",
-        submit_mode="stop",
-    )
+    chat_input_options = {"key": "doculens_chat_input"}
+    if "submit_mode" in inspect.signature(st.chat_input).parameters:
+        chat_input_options["submit_mode"] = "stop"
+    else:
+        st.caption("Update Streamlit to 1.60 or newer to enable the Stop button.")
+    prompt = st.chat_input("Ask about your indexed documents…", **chat_input_options)
     if not prompt:
         prompt = st.session_state.pop("suggested_prompt", None)
     if prompt:
